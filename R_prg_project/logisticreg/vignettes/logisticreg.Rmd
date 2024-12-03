@@ -171,6 +171,65 @@ $Diagnostic_Odds_Ratio
 [1] 1.892857
 ```
 
+### **3.1 Advanced Workflow with Categorical Data**
+
+This workflow demonstrates how to handle datasets with categorical predictors and binary targets using the `logisticreg` package.
+
+Step 1: Create a Sample Dataset with Categorical Variables
+
+```{r}
+set.seed(123)
+data <- data.frame(
+  predictor1 = rnorm(100),
+  predictor2 = factor(sample(c("A", "B", "C"), 100, replace = TRUE)),
+  target = factor(sample(c(0, 1), 100, replace = TRUE))
+)
+
+# Inspect the dataset
+head(data)
+
+```
+
+Step 2: Preprocess the Data
+
+The `preprocess_data` function automatically prepares the dataset by:
+
+Converting categorical predictors into a model matrix using one-hot encoding.
+
+Ensuring the target variable is numeric and binary (0/1).
+
+```{r}
+# Preprocessing the data
+processed <- preprocess_data(data, target_var = "target")
+
+# Extract the processed design matrix and target variable
+X <- processed$X
+y <- processed$y
+
+# Check the results
+head(X)
+head(y)
+
+```
+
+Step 3: Fit the Logistic Regression Model
+
+Use the `logistic_regression_with_factors` function to:
+
+Estimate the logistic regression coefficients.
+
+Compute bootstrap confidence intervals for the coefficients.
+
+Predict class labels for the dataset.
+
+Evaluate the model's performance with confusion matrix metrics.
+
+```{r}
+# Perform logistic regression and evaluate the model
+logistic_regression_with_factors(data, target_var = "target")
+
+```
+
 ## Summary of Workflow
 
 The `logisticreg` package simplifies the process of logistic regression modeling and evaluation. Here's a step-by-step summary of the typical workflow:
