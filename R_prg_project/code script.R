@@ -81,34 +81,41 @@ confusion_matrix_metrics <- function(y_true, y_pred) {
   ))
 }
 
-# example to check the above code chunk
-set.seed(42)
-n <- 100
-X <- cbind(1, matrix(rnorm(n * 2), ncol = 2))
-y <- rbinom(n, 1, prob = 0.5)
+# creating a function to preprocess data
+preprocess_data <- function(data, target_var) {
+  # converting target variable to numeric if its a factor
+  y <- as.numeric(data[[target_var]]) - 1  # substract 1 to make it binary
+  
+  # converting predictors to model matrix
+  X <- model.matrix(as.formula(paste(target_var, "~ .")), data = data)[, -1]
+  
+  return(list(X = X, y = y))
+}
 
-# estimate beta coefficient
-beta_est <- estimate_beta(X, y)
-
-#bootstrap confidence interval
-ci <- bootstrap_co_int(X, y, alpha = 0.05, no_of_bootstraps = 100)
-print(ci)
-
-pred_probs <- predicted_prob(beta_est, X)
-head(pred_probs)
-
-# predict lables
-y_pred <- predict(beta_est, X)
-head(y_pred)
-# calculate confusion matrix and metric
-metrics <- confusion_matrix_metrics(y, y_pred)
-print(metrics)
-
-set.seed(50)  # For reproducibility
-n <- 100  # Number of samples
-X <- cbind(1, matrix(rnorm(n * 2), ncol = 2))  # Design matrix with an intercept
-y <- rbinom(n, 1, prob = 0.5)  # Binary response variable
-beta <- c(0.5, -0.25, 0.75)  # Example beta coefficients
+# function to perform logistic regression with factor
+logistic_regression_with_factors <- function(data, target_var) {
+  processed <- preprocess_data(data, target_var)
+  X <- processed$X
+  y <- processed$y
+  
+  # estimate coefficients
+  beta <- estimate_beta(X, y)
+  print("Estimated Coefficients:")
+  print(beta)
+  
+  # calculating bootstrap confidence intervals
+  bootstrap_results <- bootstrap_co_int(X, y)
+  print("Bootstrap Confidence Intervals:")
+  print(bootstrap_results)
+  
+  #predictions
+  predictions <- predict(beta, X)
+  
+  # calculating confusion matrix and metrics
+  metrics <- confusion_matrix_metrics(y, predictions)
+  print("Confusion Matrix Metrics:")
+  print(metrics)
+}
 
 
 
