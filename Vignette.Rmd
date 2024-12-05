@@ -1,0 +1,235 @@
+---
+title: "logisticreg"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{logisticreg}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r,echo=FALSE,message=FALSE}
+library(logisticreg)
+```
+
+
+## Introduction
+
+Logistic regression is a widely used statistical method for modeling binary outcomes based on one or more predictor variables. The `logisticreg` package provides a streamlined and robust framework for performing logistic regression using numerical optimization. This package is designed to help users estimate model parameters, quantify uncertainty through bootstrap confidence intervals, and evaluate model performance using comprehensive metrics.
+
+### Key Features of `logisticreg`
+
+- **Parameter Estimation**: Uses numerical optimization (via the `optim` function) to estimate logistic regression coefficients efficiently.
+
+- **Bootstrap Confidence Intervals**: Provides a non-parametric approach to assess the uncertainty of estimated coefficients.
+
+- **Prediction**: Includes functions for predicting probabilities and binary outcomes based on fitted models.
+
+- **Performance Evaluation**: Offers tools to calculate confusion matrices and key performance metrics, such as accuracy, sensitivity, specificity, and diagnostic odds ratios.
+
+### Why Use `logisticreg`?
+
+- **Customizable Workflows**: Users can easily integrate their own data and apply the package to various binary classification tasks.
+
+- **Lightweight and Flexible**: Built for R users who need a quick and effective solution for logistic regression without relying on large external dependencies.
+
+- **Educational Value**: Ideal for understanding logistic regression concepts and applying them to real-world datasets.
+
+This vignette demonstrates the step-by-step use of the `logisticreg` package, from estimating coefficients to evaluating model performance, using a synthetic dataset.
+
+### How to Use This Vignette
+
+This vignette provides:
+
+1. A **workflow example** showing the usage of the package functions on a synthetic dataset.
+
+2. Explanations of the key functions included in the package.
+
+3. Insights into interpreting the outputs and evaluating model performance.
+
+By the end of this vignette, you’ll have a comprehensive understanding of how to:
+
+1. Fit a logistic regression model.
+
+2. Interpret the results.
+
+3. Evaluate the model's predictive accuracy and reliability.
+
+## Installation
+
+To install the `logisticreg` package, use the following command:
+
+```{r eval=FALSE}
+devtools::install_github("AU-R-Programming/Final-project_5/logisticreg")
+
+```
+
+
+Load the package after installation:
+```{r, eval=FALSE}
+library(logisticreg)
+
+```
+
+### **3. Example Workflow**
+
+We will demonstrate the functionality of the package with an example workflow using the Bank dataset provided.
+
+##### Information about dataset
+
+The data is related with direct marketing campaigns of a Portuguese banking institution. The marketing campaigns were based on phone calls. Often, more than one contact to the same client was required, in order to access if the product (bank term deposit) would be ('yes') or not ('no') subscribed. The classification goal is to predict if the client will subscribe a term deposit (variable y).
+
+You can access the data from the [UC Irvine Machine Learning Repository](https://archive.ics.uci.edu/dataset/222/bank+marketing)
+
+
+**Step 1: Load the dataset, you can change the path to where the data is saved**
+
+```{r}
+data <- read.csv("~/Downloads/bank.csv", sep = ";")
+```
+
+Convert target variable to binary (0 = "no", 1 = "yes")
+
+```{r}
+data$y <- ifelse(data$y == "yes", 1, 0)
+```
+
+Select the desired columns/predictors you wish to use and create a subset of the data. Here we used
+
+* age: clients age
+* balance: average yearly balance
+* duration: last contact duration, in seconds (numeric).
+* previous: number of contacts performed before this campaign and for this client
+
+```{r}
+numerical_columns <- c("age", "balance", "duration", "previous")
+data_subset <- data[, c(numerical_columns, "y")]
+```
+
+Standardize numerical features (mean = 0, sd = 1)
+Standardizing features is a best practice in logistic regression, especially when features vary in scale, and it often results in a more effective and interpretable model.
+
+```{r}
+X_numeric <- scale(data_subset[, numerical_columns])
+```
+
+Add intercept column to the design matrix
+Including an intercept column is essential for most regression problems, ensuring the model captures the underlying structure and relationships in the data effectively.
+```{r}
+X <- as.matrix(cbind(1, X_numeric))
+```
+
+Ensure the response variable (y) is numeric
+```{r}
+y <- as.numeric(data_subset$y)
+```
+
+Here:
+
+- X is the design matrix including an intercept term.?
+- y is the binary response variable.
+
+
+**Step 2: Estimate Coefficients**
+
+```{r}
+  beta <- estimate_beta(X, y)
+  print("Estimated Coefficients:")
+  print(beta)
+```
+
+
+**Step 3: Compute Bootstrap Confidence Intervals**
+
+```{r}
+ bootstrap_results <- bootstrap_co_int(X, y)
+  print("Bootstrap Confidence Intervals:")
+  print(bootstrap_results)
+```
+
+**Step 4: Predict Probabilities**
+
+```{r}
+pred_probs <- predicted_prob(beta, X)
+head(pred_probs)
+
+```
+
+**Step 5: Predict Class Labels**
+Predict the class labels using the predict function with a default cutoff of 0.5:
+
+```{r}
+predictions <- predict(beta, X)
+head(predictions)
+
+```
+
+- Observations with probabilities greater than the cutoff are classified as 1, otherwise as 0.
+- The output is a binary vector of predicted class labels.
+
+
+**Step 6: Evaluate Model Performance**
+
+- Evaluate the model's performance using the confusion_matrix_metrics function:
+
+```{r}
+metrics <- confusion_matrix_metrics(y, predictions)
+  print("Confusion Matrix Metrics:")
+  print(metrics)
+
+```
+
+- This function calculates key performance metrics:
+
+- Prevalence: Proportion of positive cases in the dataset.
+
+- Accuracy: Overall correct classification rate.
+
+- Sensitivity (Recall): True positive rate.
+
+- Specificity: True negative rate.
+
+- False Discovery Rate: Proportion of false positives among predicted positives.
+
+- Diagnostic Odds Ratio: A measure of the effectiveness of a diagnostic test.
+
+
+
+## Summary of Workflow
+
+The `logisticreg` package simplifies the process of logistic regression modeling and evaluation. Here's a step-by-step summary of the typical workflow:
+
+1. **Generate Data**: Create or load a dataset with binary response and predictor variables.
+
+2. **Estimate Coefficients**: Use `estimate_beta()` to compute logistic regression coefficients using numerical optimization.
+
+3. **Bootstrap Confidence Intervals**: Apply `bootstrap_co_int()` to calculate confidence intervals for the coefficients, providing uncertainty estimates.
+
+4. **Predict Probabilities**: Use `predicted_prob()` to compute the probabilities of the positive class for each observation.
+
+5. **Predict Class Labels**: Classify observations using `predict()` with a specified probability cutoff.
+
+6. **Evaluate Model Performance**: Use `confusion_matrix_metrics()` to assess the model’s performance using metrics like accuracy, sensitivity, and specificity.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
