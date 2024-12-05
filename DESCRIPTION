@@ -1,9 +1,15 @@
 Package: logisticreg
-Title: What the Package Does (One Line, Title Case)
+Title: logisticreg provides a streamlined and robust framework for performing logistic regression.
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Authors@R:c( 
+    person("Ifesinachi", "Aroh", email = "isa0009@auburn.edu", role = c("aut", "cre")),
+    person("Nikhil", "Raishetty", email = "nzr0066@auburn.edu", role = "aut"),
+    person("Shibani", "Roy", email = "szr0162@auburn.edu", role = "aut")
+    )
+Maintainer: Ifesinachi Aroh <isa0009@auburn.edu>
+Description: This package is designed to help users estimate model parameters, 
+    quantify uncertainty through bootstrap confidence intervals, 
+    and evaluate model performance using comprehensive metrics.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
