@@ -8,7 +8,10 @@
 #' @return Negative log-likelihood value (as optim minimizes by default).
 #' @export
 log_likelihood <- function(beta, X, y) {
-  pr <- 1 / (1 + exp(-X %*% beta))
+  eta <- X %*% beta
+  pr <- 1 / (1 + exp(-eta))
+  epsilon <- 1e-15
+  pr <- pmax(pmin(pr, 1 - epsilon), epsilon)
   log_li <- sum(y * log(pr) + (1 - y) * log(1 - pr))
-  return(-log_li)  
+  return(-log_li)
 }

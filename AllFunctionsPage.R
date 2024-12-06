@@ -4,11 +4,14 @@
 
 # creating function to calculate loglikelihood
 log_likelihood <- function(beta, X, y) {
-  pr <- 1 / (1 + exp(-X %*% beta))
+  eta <- X %*% beta
+  pr <- 1 / (1 + exp(-eta))
+  epsilon <- 1e-15
+  pr <- pmax(pmin(pr, 1 - epsilon), epsilon)
   log_li <- sum(y * log(pr) + (1 - y) * log(1 - pr))
-  #using negate because optim performs minimization
   return(-log_li)
 }
+
 
 # creating a function to estimate beta by using optimization
 estimate_beta <- function(X, y) {
@@ -52,12 +55,12 @@ predicted_prob <- function(beta, X) {
 }
 
 #predict labels
-predict <- function(beta, X, cutoff = 0.5) {
+predictlabels <- function(beta, X, cutoff = 0.5) {
   prob <- predicted_prob(beta, X)
   return(ifelse(prob > cutoff, 1, 0))
 }
 
-# create afunction to calculate confusion marix and metrics
+# create a function to calculate confusion marix and metrics
 confusion_matrix_metrics <- function(y_true, y_pred) {
   TP <- sum(y_true == 1 & y_pred == 1)
   TN <- sum(y_true == 0 & y_pred == 0)
@@ -81,50 +84,89 @@ confusion_matrix_metrics <- function(y_true, y_pred) {
   ))
 }
 
-# Example to test the functions
-# Load the dataset - We used the Bank Marketing data set provided
-data <- read.csv("~/Downloads/bank.csv", sep = ";")
-
-# Convert target variable to binary (0 = "no", 1 = "yes")
-data$y <- ifelse(data$y == "yes", 1, 0)
-
-# Select columns
-numerical_columns <- c("age", "balance", "duration", "previous")
-data_subset <- data[, c(numerical_columns, "y")]
-
-# Standardize numerical features (mean = 0, sd = 1)
-X_numeric <- scale(data_subset[, numerical_columns])
-
-# Add intercept column to the design matrix
-X <- as.matrix(cbind(1, X_numeric))
-
-# Ensure the response variable (y) is numeric
-y <- as.numeric(data_subset$y)
+#Logistic regression analysis wrapper function
+logistic_regression_analysis <- function(data, x_vars, y_var, no_of_bootstraps) {
+  # Internal fixed parameters
+  alpha <- 0.05
+  cutoff <- 0.5
   
-  # estimate coefficients
-  beta <- estimate_beta(X, y)
-  print("Estimated Coefficients:")
+  # Extract predictors and response from the data
+  X <- data[, x_vars, drop = FALSE]
+  y <- data[[y_var]]
+  
+  # Data Preprocessing
+  
+  ## Handle missing values
+  data_combined <- data.frame(X, y)
+  data_combined <- na.omit(data_combined)
+  
+  # Separate predictors and response after cleaning
+  X <- data_combined[, x_vars, drop = FALSE]
+  y <- data_combined$y
+  
+  ## Convert character variables to factors
+  X <- as.data.frame(X)  # Ensure X is a data frame
+  char_vars <- sapply(X, is.character)
+  X[char_vars] <- lapply(X[char_vars], as.factor)
+  
+  ## Ensure y is binary
+  if (is.factor(y) || is.character(y)) {
+    y <- as.factor(y)
+    if (length(levels(y)) != 2) {
+      stop("The response variable 'y' should be binary with two levels.")
+    }
+    y <- as.numeric(y) - 1
+  } else if (is.numeric(y)) {
+    if (!all(y %in% c(0, 1))) {
+      stop("The numeric response variable 'y' should contain only 0 and 1.")
+    }
+  } else {
+    stop("The response variable 'y' should be numeric or factor.")
+  }
+  
+  # Convert predictors to a design matrix (including intercept)
+  X_design <- model.matrix(~ ., data = X)
+  
+  
+  # Estimate coefficients using numerical optimization
+  beta <- estimate_beta(X_design, y)
+  
+  # Assign names to beta coefficients
+  names(beta) <- colnames(X_design)
+  
+  # Display estimated coefficients
+  cat("Estimated Coefficients:\n")
   print(beta)
   
-  # calculating bootstrap confidence intervals
-  bootstrap_results <- bootstrap_co_int(X, y)
-  print("Bootstrap Confidence Intervals:")
+  # Calculate bootstrap confidence intervals
+  cat("\nBootstrap Confidence Intervals:\n")
+  bootstrap_results <- bootstrap_co_int(X_design, y, alpha = alpha, no_of_bootstraps = no_of_bootstraps)
   print(bootstrap_results)
   
-  #Predicted Probablities
-  pred_probs <- predicted_prob(beta, X)
-  head(pred_probs)
+  # Compute predicted probabilities
+  pred_probs <- predicted_prob(beta, X_design)
+  cat("\nPredicted Probabilities (first 6):\n")
+  print(head(pred_probs))
   
-  #predictions
-  predictions <- predict(beta, X)
-  head(predictions)
+  # Generate predictions based on cutoff
+  predictions <- predict(beta, X_design, cutoff = cutoff)
+  cat("\nPredictions (first 6):\n")
+  print(head(predictions))
   
-  
-  # calculating confusion matrix and metrics
+  # Calculate confusion matrix and metrics
   metrics <- confusion_matrix_metrics(y, predictions)
-  print("Confusion Matrix Metrics:")
+  cat("\nConfusion Matrix Metrics:\n")
   print(metrics)
-
+  
+  # Return results as a list
+  return(list(
+    beta = beta,
+    bootstrap_conf_int = bootstrap_results,
+    predicted_probabilities = pred_probs,
+    predictions = predictions,
+    confusion_matrix_metrics = metrics
+  ))
+}
 
 
 

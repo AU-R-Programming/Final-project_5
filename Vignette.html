@@ -380,14 +380,14 @@ datasets.</p></li>
 </ul>
 <p>This vignette demonstrates the step-by-step use of the
 <code>logisticreg</code> package, from estimating coefficients to
-evaluating model performance, using a synthetic dataset.</p>
+evaluating model performance, using a dataset.</p>
 </div>
-<div id="how-to-use-this-vignette" class="section level3">
-<h3>How to Use This Vignette</h3>
+<div id="how-to-use-the-pacakge-and-functions" class="section level3">
+<h3>How to Use the Pacakge and Functions</h3>
 <p>This vignette provides:</p>
 <ol style="list-style-type: decimal">
 <li><p>A <strong>workflow example</strong> showing the usage of the
-package functions on a synthetic dataset.</p></li>
+package functions on a dataset.</p></li>
 <li><p>Explanations of the key functions included in the
 package.</p></li>
 <li><p>Insights into interpreting the outputs and evaluating model
@@ -410,12 +410,87 @@ command:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;AU-R-Programming/Final-project_5/logisticreg&quot;</span>)</span></code></pre></div>
 <p>Load the package after installation:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(logisticreg)</span></code></pre></div>
+</div>
+<div id="internal-workings-of-logistic_regression_analysis-which-is-the-main-wrapper-function" class="section level2">
+<h2>Internal Workings of <code>logistic_regression_analysis()</code>
+Which is the Main Wrapper Function</h2>
+<p><strong>Description:</strong> `logistic_regression_analysis()`
+orchestrates the entire logistic regression process: data cleaning,
+model fitting, bootstrap-based inference, prediction, and performance
+evaluation. The user only needs to provide the data, the predictor
+names, the response variable name, and the number of bootstrap
+samples.</p>
+<p><strong>Step-by-Step Process:</strong> 1. <strong>Parameter
+Initialization:</strong> - Internally sets the significance level () and
+classification cutoff (0.5).</p>
+<ol start="2" style="list-style-type: decimal">
+<li><strong>Data Extraction and Preprocessing:</strong>
+<ul>
+<li>Subsets the provided data frame to the specified predictors
+(<code>x_vars</code>) and response (<code>y_var</code>).</li>
+<li>Removes rows with missing values using <code>na.omit()</code> to
+ensure a clean dataset for modeling.</li>
+<li>Converts character predictors into factors, ensuring categorical
+variables are appropriately handled.</li>
+<li>Validates and converts the response variable into a binary (0/1)
+numeric format.</li>
+</ul></li>
+<li><strong>Design Matrix Creation:</strong>
+<ul>
+<li>Calls <code>model.matrix()</code> to construct a design matrix that
+includes an intercept and dummy variables for categorical
+predictors.</li>
+</ul></li>
+<li><strong>Coefficient Estimation:</strong>
+<ul>
+<li>Invokes <code>estimate_beta()</code> to fit the logistic model by
+numerically optimizing the log-likelihood function.</li>
+<li>Assigns meaningful column names to the estimated coefficients.</li>
+</ul></li>
+<li><strong>Bootstrap Confidence Intervals:</strong>
+<ul>
+<li>Uses <code>bootstrap_co_int()</code> to draw multiple bootstrap
+samples, refit the model, and compute empirical confidence intervals for
+each coefficient.</li>
+</ul></li>
+<li><strong>Predictions and Probabilities:</strong>
+<ul>
+<li>Computes predicted probabilities for each observation using
+<code>predicted_prob()</code>.</li>
+<li>Converts these probabilities into binary class predictions (0/1)
+based on the fixed cutoff (0.5).</li>
+</ul></li>
+<li><strong>Model Performance Evaluation:</strong>
+<ul>
+<li>Calls <code>confusion_matrix_metrics()</code> to produce a confusion
+matrix and performance metrics (accuracy, sensitivity, specificity,
+etc.).</li>
+<li>Prints key results (coefficients, confidence intervals, predictions,
+metrics) to the console for immediate inspection.</li>
+</ul></li>
+<li><strong>Return Value:</strong>
+<ul>
+<li>Returns a list containing:
+<ul>
+<li>Estimated coefficients</li>
+<li>Bootstrap confidence intervals</li>
+<li>Predicted probabilities</li>
+<li>Predicted classes</li>
+<li>Confusion matrix metrics</li>
+</ul></li>
+</ul></li>
+</ol>
+<p><strong>In Summary:</strong> The function takes care of all the heavy
+lifting: from cleaning data and transforming inputs into a suitable
+design matrix, to fitting the model, quantifying uncertainty with
+bootstrapping, predicting outcomes, and finally assessing how well the
+model performed.</p>
 <div id="example-workflow" class="section level3">
-<h3><strong>3. Example Workflow</strong></h3>
+<h3><strong>Example Workflow</strong></h3>
 <p>We will demonstrate the functionality of the package with an example
 workflow using the Bank dataset provided.</p>
-<div id="information-about-dataset" class="section level5">
-<h5>Information about dataset</h5>
+<div id="information-about-dataset" class="section level4">
+<h4>Information about dataset</h4>
 <p>The data is related with direct marketing campaigns of a Portuguese
 banking institution. The marketing campaigns were based on phone calls.
 Often, more than one contact to the same client was required, in order
@@ -424,151 +499,266 @@ to access if the product (bank term deposit) would be (‘yes’) or not
 will subscribe a term deposit (variable y).</p>
 <p>You can access the data from the <a href="https://archive.ics.uci.edu/dataset/222/bank+marketing">UC Irvine
 Machine Learning Repository</a></p>
-<p><strong>Step 1: Load the dataset, you can change the path to where
-the data is saved</strong></p>
+<p><strong>Load the dataset, you can change the path to where you have
+the data</strong></p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;~/Downloads/bank.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;;&quot;</span>)</span></code></pre></div>
-<p>Convert target variable to binary (0 = “no”, 1 = “yes”)</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>data<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(data<span class="sc">$</span>y <span class="sc">==</span> <span class="st">&quot;yes&quot;</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span></code></pre></div>
-<p>Select the desired columns/predictors you wish to use and create a
-subset of the data. Here we used</p>
+<p>Select the desired columns/predictors you wish to use and create
+<code>x_vars</code> and <code>y_var</code></p>
 <ul>
-<li>age: clients age</li>
-<li>balance: average yearly balance</li>
-<li>duration: last contact duration, in seconds (numeric).</li>
-<li>previous: number of contacts performed before this campaign and for
-this client</li>
+<li><strong><em>age</em></strong>: clients age</li>
+<li><strong><em>marital</em></strong>: marital status</li>
+<li><strong><em>education</em></strong>: education Level</li>
+<li><strong><em>default</em></strong>: has credit in default?</li>
+<li><strong><em>balance</em></strong>: average yearly balance</li>
+<li><strong><em>duration</em></strong>: last contact duration, in
+seconds (numeric).</li>
+<li><strong><em>previous</em></strong>: number of contacts performed
+before this campaign and for this client</li>
 </ul>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>numerical_columns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;balance&quot;</span>, <span class="st">&quot;duration&quot;</span>, <span class="st">&quot;previous&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>data_subset <span class="ot">&lt;-</span> data[, <span class="fu">c</span>(numerical_columns, <span class="st">&quot;y&quot;</span>)]</span></code></pre></div>
-<p>Standardize numerical features (mean = 0, sd = 1) Standardizing
-features is a best practice in logistic regression, especially when
-features vary in scale, and it often results in a more effective and
-interpretable model.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>X_numeric <span class="ot">&lt;-</span> <span class="fu">scale</span>(data_subset[, numerical_columns])</span></code></pre></div>
-<p>Add intercept column to the design matrix Including an intercept
-column is essential for most regression problems, ensuring the model
-captures the underlying structure and relationships in the data
-effectively.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">cbind</span>(<span class="dv">1</span>, X_numeric))</span></code></pre></div>
-<p>Ensure the response variable (y) is numeric</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(data_subset<span class="sc">$</span>y)</span></code></pre></div>
-<p>Here:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>x_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>,  <span class="st">&quot;marital&quot;</span>, <span class="st">&quot;education&quot;</span>, <span class="st">&quot;default&quot;</span>, <span class="st">&quot;balance&quot;</span>,<span class="st">&quot;duration&quot;</span>, <span class="st">&quot;previous&quot;</span>)  <span class="co"># Example predictors</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>y_var <span class="ot">&lt;-</span> <span class="st">&quot;y&quot;</span>  <span class="co"># Response variable</span></span></code></pre></div>
+<p>Call the <code>logistic_regression_analysis</code> function, setting
+the arguments <code>x_vars</code>, <code>y_var</code> and
+<code>no_of_bootstraps</code>.</p>
 <ul>
-<li>X is the design matrix including an intercept term.?</li>
-<li>y is the binary response variable.</li>
+<li>data: A data frame containing the predictors and the response
+variable.</li>
+<li>x_vars: A character vector specifying the names of the predictor
+variables in data.These can be both numeric and categorical variables.
+Categorical variables will be internally converted into dummy
+variables.</li>
+<li>y_var: A character scalar indicating the name of the binary response
+variable in data.The response should be coded as 0/1 or as a factor with
+two levels.</li>
+<li>no_of_bootstraps: An integer specifying the number of bootstrap
+samples to use for estimating the confidence intervals of the
+coefficients.</li>
 </ul>
-<p><strong>Step 2: Estimate Coefficients</strong></p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>  beta <span class="ot">&lt;-</span> <span class="fu">estimate_beta</span>(X, y)</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">&quot;Estimated Coefficients:&quot;</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Estimated Coefficients:&quot;</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="fu">print</span>(beta)</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;                 [,1]</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;          -2.36420142</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; age       0.14571952</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; balance   0.07427082</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; duration  0.93574900</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; previous  0.26981146</span></span></code></pre></div>
-<p><strong>Step 3: Compute Bootstrap Confidence Intervals</strong></p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a> bootstrap_results <span class="ot">&lt;-</span> <span class="fu">bootstrap_co_int</span>(X, y)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">&quot;Bootstrap Confidence Intervals:&quot;</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bootstrap Confidence Intervals:&quot;</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="fu">print</span>(bootstrap_results)</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; $lower</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; [1] -2.41964646  0.06222908  0.04182974  0.76875427  0.19777794</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; $upper</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; [1] -2.2576157  0.2205504  0.1178402  1.0055004  0.3396779</span></span></code></pre></div>
-<p><strong>Step 4: Predict Probabilities</strong></p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>pred_probs <span class="ot">&lt;-</span> <span class="fu">predicted_prob</span>(beta, X)</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">head</span>(pred_probs)</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;            [,1]</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; [1,] 0.03691217</span></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; [2,] 0.11907917</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; [3,] 0.06522439</span></span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; [4,] 0.05534907</span></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; [5,] 0.08495987</span></span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; [6,] 0.07466346</span></span></code></pre></div>
-<p><strong>Step 5: Predict Class Labels</strong> Predict the class
-labels using the predict function with a default cutoff of 0.5:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(beta, X)</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">head</span>(predictions)</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; [1,]    0</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; [2,]    0</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; [3,]    0</span></span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; [4,]    0</span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; [5,]    0</span></span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; [6,]    0</span></span></code></pre></div>
-<ul>
-<li>Observations with probabilities greater than the cutoff are
-classified as 1, otherwise as 0.</li>
-<li>The output is a binary vector of predicted class labels.</li>
-</ul>
-<p><strong>Step 6: Evaluate Model Performance</strong></p>
-<ul>
-<li>Evaluate the model’s performance using the confusion_matrix_metrics
-function:</li>
-</ul>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>metrics <span class="ot">&lt;-</span> <span class="fu">confusion_matrix_metrics</span>(y, predictions)</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">&quot;Confusion Matrix Metrics:&quot;</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Confusion Matrix Metrics:&quot;</span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="fu">print</span>(metrics)</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; $Prevalence</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.11524</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; $Accuracy</span></span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; [1] 0.8863083</span></span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; $Sensitivity</span></span>
-<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; [1] 0.1573896</span></span>
-<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="co">#&gt; $Specificity</span></span>
-<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; [1] 0.98125</span></span>
-<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a><span class="co">#&gt; $False_Discovery_Rate</span></span>
-<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="co">#&gt; [1] 0.477707</span></span>
-<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a><span class="co">#&gt; $Diagnostic_Odds_Ratio</span></span>
-<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a><span class="co">#&gt; [1] 9.775247</span></span></code></pre></div>
-<ul>
-<li><p>This function calculates key performance metrics:</p></li>
-<li><p>Prevalence: Proportion of positive cases in the dataset.</p></li>
-<li><p>Accuracy: Overall correct classification rate.</p></li>
-<li><p>Sensitivity (Recall): True positive rate.</p></li>
-<li><p>Specificity: True negative rate.</p></li>
-<li><p>False Discovery Rate: Proportion of false positives among
-predicted positives.</p></li>
-<li><p>Diagnostic Odds Ratio: A measure of the effectiveness of a
-diagnostic test.</p></li>
-</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">logistic_regression_analysis</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">x_vars =</span> x_vars,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">y_var =</span> y_var,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">no_of_bootstraps =</span> <span class="dv">20</span>  </span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; Estimated Coefficients:</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;                             [,1]</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; (Intercept)        -3.9861824509</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; age                 0.0231161059</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; maritalmarried     -0.6953138026</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; maritalsingle      -0.3026683861</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; educationsecondary  0.5488431414</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; educationtertiary   1.1881491302</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; educationunknown    1.1227889068</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; defaultyes         -1.4411324852</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; balance            -0.0004205648</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; duration            0.0037823035</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; previous            0.1566433251</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;names&quot;)</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;(Intercept)&quot;        &quot;age&quot;                &quot;maritalmarried&quot;    </span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;maritalsingle&quot;      &quot;educationsecondary&quot; &quot;educationtertiary&quot; </span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;educationunknown&quot;   &quot;defaultyes&quot;         &quot;balance&quot;           </span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; [10] &quot;duration&quot;           &quot;previous&quot;          </span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; Bootstrap Confidence Intervals:</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; $lower</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt;  [1] -6.8950257289  0.0153372709 -0.9379191764 -0.4976859384  0.0646084760</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt;  [6]  0.6273414068 -2.2643953199 -1.8293467126 -0.0005759627  0.0033154080</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; [11]  0.1137400359</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; $upper</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt;  [1] -3.394841e+00  5.380632e-02  3.393757e-01  1.261576e+00  1.023821e+00</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt;  [6]  1.787529e+00  1.227308e+00  6.682602e-01 -8.594617e-05  4.913845e-03</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; [11]  2.273058e-01</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; Predicted Probabilities (first 6):</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt;         [,1]</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; 1 0.01164966</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; 2 0.01935563</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; 3 0.11888505</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; 4 0.06489191</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; 5 0.12853189</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt; 6 0.16762340</span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; Predictions (first 6):</span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt;   [,1]</span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; 1    0</span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; 2    0</span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; 3    0</span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt; 4    0</span></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; 5    0</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="co">#&gt; 6    0</span></span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="co">#&gt; Confusion Matrix Metrics:</span></span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="co">#&gt; $Prevalence</span></span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; [1] 0.11524</span></span>
+<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="co">#&gt; $Accuracy</span></span>
+<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a><span class="co">#&gt; [1] 0.8863083</span></span>
+<span id="cb5-63"><a href="#cb5-63" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-64"><a href="#cb5-64" tabindex="-1"></a><span class="co">#&gt; $Sensitivity</span></span>
+<span id="cb5-65"><a href="#cb5-65" tabindex="-1"></a><span class="co">#&gt; [1] 0.2341651</span></span>
+<span id="cb5-66"><a href="#cb5-66" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-67"><a href="#cb5-67" tabindex="-1"></a><span class="co">#&gt; $Specificity</span></span>
+<span id="cb5-68"><a href="#cb5-68" tabindex="-1"></a><span class="co">#&gt; [1] 0.97125</span></span>
+<span id="cb5-69"><a href="#cb5-69" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-70"><a href="#cb5-70" tabindex="-1"></a><span class="co">#&gt; $False_Discovery_Rate</span></span>
+<span id="cb5-71"><a href="#cb5-71" tabindex="-1"></a><span class="co">#&gt; [1] 0.4852321</span></span>
+<span id="cb5-72"><a href="#cb5-72" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-73"><a href="#cb5-73" tabindex="-1"></a><span class="co">#&gt; $Diagnostic_Odds_Ratio</span></span>
+<span id="cb5-74"><a href="#cb5-74" tabindex="-1"></a><span class="co">#&gt; [1] 10.32952</span></span></code></pre></div>
 </div>
 </div>
 </div>
-<div id="summary-of-workflow" class="section level2">
-<h2>Summary of Workflow</h2>
-<p>The <code>logisticreg</code> package simplifies the process of
-logistic regression modeling and evaluation. Here’s a step-by-step
-summary of the typical workflow:</p>
-<ol style="list-style-type: decimal">
-<li><p><strong>Generate Data</strong>: Create or load a dataset with
-binary response and predictor variables.</p></li>
-<li><p><strong>Estimate Coefficients</strong>: Use
-<code>estimate_beta()</code> to compute logistic regression coefficients
-using numerical optimization.</p></li>
-<li><p><strong>Bootstrap Confidence Intervals</strong>: Apply
-<code>bootstrap_co_int()</code> to calculate confidence intervals for
-the coefficients, providing uncertainty estimates.</p></li>
-<li><p><strong>Predict Probabilities</strong>: Use
-<code>predicted_prob()</code> to compute the probabilities of the
-positive class for each observation.</p></li>
-<li><p><strong>Predict Class Labels</strong>: Classify observations
-using <code>predict()</code> with a specified probability
-cutoff.</p></li>
-<li><p><strong>Evaluate Model Performance</strong>: Use
-<code>confusion_matrix_metrics()</code> to assess the model’s
-performance using metrics like accuracy, sensitivity, and
-specificity.</p></li>
-</ol>
+<div id="interpretation-of-results" class="section level2">
+<h2>Interpretation of Results</h2>
+<p><strong>Model Coefficients:</strong> - The intercept is negative and
+large in magnitude, indicating a low baseline probability of a positive
+outcome when all predictors are at their reference levels. - Positive
+coefficients (e.g., for <code>educationtertiary</code>) suggest that
+having that characteristic increases the likelihood of a positive
+outcome. - Negative coefficients (e.g., for <code>defaultyes</code>)
+indicate that having that trait decreases the likelihood of a positive
+outcome.</p>
+<p><strong>Bootstrap Confidence Intervals:</strong> - The provided
+intervals show the range of plausible values for each coefficient. -
+Many intervals do not include zero, suggesting that those predictors
+have a meaningful association with the outcome.</p>
+<p><strong>Predicted Probabilities and Predictions:</strong> - The first
+six predicted probabilities are all relatively low (&lt;0.17), leading
+to predicted class 0 for these observations. - This suggests the model
+is conservative about predicting positive outcomes.</p>
+<p><strong>Performance Metrics:</strong></p>
+<ul>
+<li><strong>Prevalence (~0.115):</strong> About 11.5% of observations
+are positive in the dataset.</li>
+<li><strong>Accuracy (~0.886):</strong> The model correctly classifies
+nearly 89% of observations overall.</li>
+<li><strong>Sensitivity (~0.234):</strong> It correctly identifies about
+23% of actual positives, indicating it often misses positives.</li>
+<li><strong>Specificity (~0.971):</strong> It correctly identifies about
+97% of actual negatives, showing strong performance in ruling out
+negatives.</li>
+<li><strong>False Discovery Rate (~0.485):</strong> Almost half of the
+predicted positives are actually false positives.</li>
+<li><strong>Diagnostic Odds Ratio (10.33):</strong> The model has
+moderate ability to distinguish between positive and negative
+cases.</li>
+</ul>
+</div>
+<div id="documentation-of-helper-functions" class="section level2">
+<h2>Documentation of Helper Functions</h2>
+<p>Below is a description of the main helper functions included in the
+package. These functions work together to perform logistic regression
+estimation using numerical optimization, bootstrap confidence intervals,
+and model performance evaluation.</p>
+<div id="log_likelihoodbeta-x-y" class="section level3">
+<h3>1. <code>log_likelihood(beta, X, y)</code></h3>
+<p><strong>Description:</strong><br />
+Calculates the negative log-likelihood for a given set of parameters
+(<code>beta</code>), predictors (<code>X</code>), and binary response
+(<code>y</code>). This function is internally used by the optimization
+routine to find the parameter values that minimize the negative
+log-likelihood.</p>
+<p><strong>Key Details:</strong><br />
+- <code>beta</code>: Coefficient vector for the logistic regression
+model.<br />
+- <code>X</code>: Design matrix of predictors (including intercept if
+applicable).<br />
+- <code>y</code>: Binary response variable (0/1).<br />
+- Ensures numerical stability by clipping probabilities away from 0 and
+1 with a small <code>epsilon</code>.</p>
+</div>
+<div id="estimate_betax-y" class="section level3">
+<h3>2. <code>estimate_beta(X, y)</code></h3>
+<p><strong>Description:</strong><br />
+Estimates the logistic regression coefficients by minimizing the
+negative log-likelihood using the <code>optim()</code> function. It
+starts from an initial guess derived from a least-squares approximation
+and iteratively updates the parameters.</p>
+<p><strong>Key Details:</strong><br />
+- <code>X</code>: Design matrix of predictors.<br />
+- <code>y</code>: Binary response variable.<br />
+- Returns a vector of estimated coefficients that best fit the data
+under a logistic model.</p>
+</div>
+<div id="bootstrap_co_intx-y-alpha-0.05-no_of_bootstraps-20" class="section level3">
+<h3>3.
+<code>bootstrap_co_int(X, y, alpha = 0.05, no_of_bootstraps = 20)</code></h3>
+<p><strong>Description:</strong><br />
+Computes bootstrap confidence intervals for the estimated coefficients.
+It repeatedly samples the data with replacement, re-estimates the
+coefficients, and then derives empirical percentile-based confidence
+intervals.</p>
+<p><strong>Key Details:</strong><br />
+- <code>X</code>: Design matrix of predictors.<br />
+- <code>y</code>: Binary response variable.<br />
+- <code>alpha</code>: Significance level (default 0.05).<br />
+- <code>no_of_bootstraps</code>: Number of bootstrap samples (default
+20).<br />
+- Returns a list with <code>lower</code> and <code>upper</code>
+confidence limits for each coefficient.</p>
+</div>
+<div id="predicted_probbeta-x" class="section level3">
+<h3>4. <code>predicted_prob(beta, X)</code></h3>
+<p><strong>Description:</strong><br />
+Generates the predicted probabilities of the positive class (1) for each
+observation given the current coefficient estimates.</p>
+<p><strong>Key Details:</strong><br />
+- <code>beta</code>: Coefficient vector.<br />
+- <code>X</code>: Design matrix.<br />
+- Returns a vector of probabilities (values between 0 and 1).</p>
+</div>
+<div id="predictlabelsbeta-x-cutoff-0.5" class="section level3">
+<h3>5. <code>predictlabels(beta, X, cutoff = 0.5)</code></h3>
+<p><strong>Description:</strong><br />
+Converts predicted probabilities into class predictions (0 or 1) based
+on a specified cutoff. Observations with predicted probabilities above
+the cutoff are classified as 1; otherwise, 0.</p>
+<p><strong>Key Details:</strong><br />
+- <code>beta</code>: Coefficient vector.<br />
+- <code>X</code>: Design matrix.<br />
+- <code>cutoff</code>: Classification threshold (default 0.5).<br />
+- Returns a vector of predicted classes (0/1).</p>
+</div>
+<div id="confusion_matrix_metricsy_true-y_pred" class="section level3">
+<h3>6. <code>confusion_matrix_metrics(y_true, y_pred)</code></h3>
+<p><strong>Description:</strong><br />
+Calculates various performance metrics derived from the confusion
+matrix. This includes accuracy, sensitivity, specificity, false
+discovery rate, and diagnostic odds ratio, among others.</p>
+<p><strong>Key Details:</strong><br />
+- <code>y_true</code>: True binary labels.<br />
+- <code>y_pred</code>: Predicted binary labels.<br />
+- Returns a list of performance metrics and summary statistics.</p>
+<hr />
+<p><strong>How These Functions Work Together:</strong> -
+<code>log_likelihood()</code> and <code>estimate_beta()</code> handle
+the core parameter estimation for logistic regression. -
+<code>bootstrap_co_int()</code> refines the understanding of parameter
+uncertainty through resampling. - <code>predicted_prob()</code> and
+<code>predictlabels()</code> translate model parameters into
+interpretable predictions. - <code>confusion_matrix_metrics()</code>
+provides a snapshot of how well the model’s predictions align with the
+actual outcomes, guiding model evaluation and comparison.</p>
+<p>You will not need to call these helper functions directly if you use
+the main wrapper function (ie,
+<code>logistic_regression_analysis()</code>). However, understanding
+these components can help you diagnose issues, customize analyses, or
+extend the functionality.</p>
+<p><strong>The <code>logisticreg</code> package simplifies the process
+of logistic regression modeling and evaluation.</strong></p>
+</div>
+</div>
+<div id="logistic-regression-shiny-app" class="section level2">
+<h2>Logistic Regression Shiny App</h2>
+<p>This Shiny app provides an interactive interface for performing
+logistic regression analysis. Upload your dataset, select the response
+and predictor variables, and view the results instantly.</p>
+<p>To launch the app, simply run the following command in your R
+console:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">run_logisticreg_app</span>()</span></code></pre></div>
 </div>
 
 

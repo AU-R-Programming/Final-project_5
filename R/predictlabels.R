@@ -14,7 +14,7 @@
 #' beta_est <- estimate_beta(X, y)
 #' y_pred <- predictlabels(beta_est, X)
 #' print(y_pred)
-predict <- function(beta, X, cutoff = 0.5) {
+predictlabels <- function(beta, X, cutoff = 0.5) {
   prob <- predicted_prob(beta, X)
   return(ifelse(prob > cutoff, 1, 0))
 }
