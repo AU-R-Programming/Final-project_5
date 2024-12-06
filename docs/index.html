@@ -58,7 +58,360 @@
 <div class="section level1">
 <div class="page-header"><h1 id="logisticreg-package">Logisticreg Package<a class="anchor" aria-label="anchor" href="#logisticreg-package"></a>
 </h1></div>
+<div class="section level2">
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h2>
 <p>Logistic regression is a widely used statistical method for modeling binary outcomes based on one or more predictor variables. The <code>logisticreg</code> package provides a streamlined and robust framework for performing logistic regression using numerical optimization. This package is designed to help users estimate model parameters, quantify uncertainty through bootstrap confidence intervals, and evaluate model performance using comprehensive metrics.</p>
+<div class="section level3">
+<h3 id="key-features-of-logisticreg">Key Features of <code>logisticreg</code>
+<a class="anchor" aria-label="anchor" href="#key-features-of-logisticreg"></a>
+</h3>
+<ul>
+<li><p><strong>Parameter Estimation</strong>: Uses numerical optimization (via the <code>optim</code> function) to estimate logistic regression coefficients efficiently.</p></li>
+<li><p><strong>Bootstrap Confidence Intervals</strong>: Provides a non-parametric approach to assess the uncertainty of estimated coefficients.</p></li>
+<li><p><strong>Prediction</strong>: Includes functions for predicting probabilities and binary outcomes based on fitted models.</p></li>
+<li><p><strong>Performance Evaluation</strong>: Offers tools to calculate confusion matrices and key performance metrics, such as accuracy, sensitivity, specificity, and diagnostic odds ratios.</p></li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="why-use-logisticreg">Why Use <code>logisticreg</code>?<a class="anchor" aria-label="anchor" href="#why-use-logisticreg"></a>
+</h3>
+<ul>
+<li><p><strong>Customizable Workflows</strong>: Users can easily integrate their own data and apply the package to various binary classification tasks.</p></li>
+<li><p><strong>Lightweight and Flexible</strong>: Built for R users who need a quick and effective solution for logistic regression without relying on large external dependencies.</p></li>
+<li><p><strong>Educational Value</strong>: Ideal for understanding logistic regression concepts and applying them to real-world datasets.</p></li>
+</ul>
+<p>This vignette demonstrates the step-by-step use of the <code>logisticreg</code> package, from estimating coefficients to evaluating model performance, using a dataset.</p>
+</div>
+<div class="section level3">
+<h3 id="how-to-use-the-pacakge-and-functions">How to Use the Pacakge and Functions<a class="anchor" aria-label="anchor" href="#how-to-use-the-pacakge-and-functions"></a>
+</h3>
+<p>This vignette provides:</p>
+<ol style="list-style-type: decimal">
+<li><p>A <strong>workflow example</strong> showing the usage of the package functions on a dataset.</p></li>
+<li><p>Explanations of the key functions included in the package.</p></li>
+<li><p>Insights into interpreting the outputs and evaluating model performance.</p></li>
+</ol>
+<p>By the end of this vignette, you’ll have a comprehensive understanding of how to:</p>
+<ol style="list-style-type: decimal">
+<li><p>Fit a logistic regression model.</p></li>
+<li><p>Interpret the results.</p></li>
+<li><p>Evaluate the model’s predictive accuracy and reliability.</p></li>
+</ol>
+</div>
+</div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>To get started with the <code>logisticreg</code> package, you first need to install it from its GitHub repository. The installation process requires the <code>devtools</code> package, which allows you to install packages directly from GitHub. If you do not already have <code>devtools</code> installed, you can install it easily using the following command:</p>
+<pre><code><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span></code></pre>
+<p>Once <code>devtools</code> is installed, you can proceed to install the <code>logisticreg</code> package. Simply run the following command in your R console:</p>
+<pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"AU-R-Programming/Final-project_5"</span><span class="op">)</span></span></code></pre>
+<p>After successfully installing the <code>logisticreg</code> package, the next step is to load it into your R environment. Loading the package ensures that all its functions and features are available for use in your session. To do this, use the <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> function as shown below:</p>
+<pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">logisticreg</span><span class="op">)</span></span></code></pre>
+<p>This command activates the package, making its functions accessible so you can begin your analysis. Once the package is loaded, you can start exploring its capabilities, such as fitting logistic regression models, generating predictions, evaluating performance metrics, and more. Loading the package is a crucial step before running any of its functionalities.</p>
+</div>
+<div class="section level2">
+<h2 id="internal-workings-of-logistic_regression_analysis-which-is-the-main-wrapper-function">Internal Workings of <code>logistic_regression_analysis()</code> Which is the Main Wrapper Function<a class="anchor" aria-label="anchor" href="#internal-workings-of-logistic_regression_analysis-which-is-the-main-wrapper-function"></a>
+</h2>
+<p><strong>Description:</strong> <code><a href="reference/logistic_regression_analysis.html">logistic_regression_analysis()</a></code> orchestrates the entire logistic regression process: data cleaning, model fitting, bootstrap-based inference, prediction, and performance evaluation. The user only needs to provide the data, the predictor names, the response variable name, and the number of bootstrap samples.</p>
+<p><strong>Step-by-Step Process:</strong> 1. <strong>Parameter Initialization:</strong> - Internally sets the significance level () and classification cutoff (0.5).</p>
+<ol start="2" style="list-style-type: decimal">
+<li>
+<strong>Data Extraction and Preprocessing:</strong>
+<ul>
+<li>Subsets the provided data frame to the specified predictors (<code>x_vars</code>) and response (<code>y_var</code>).</li>
+<li>Removes rows with missing values using <code><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit()</a></code> to ensure a clean dataset for modeling.</li>
+<li>Converts character predictors into factors, ensuring categorical variables are appropriately handled.</li>
+<li>Validates and converts the response variable into a binary (0/1) numeric format.</li>
+</ul>
+</li>
+<li>
+<strong>Design Matrix Creation:</strong>
+<ul>
+<li>Calls <code><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix()</a></code> to construct a design matrix that includes an intercept and dummy variables for categorical predictors.</li>
+</ul>
+</li>
+<li>
+<strong>Coefficient Estimation:</strong>
+<ul>
+<li>Invokes <code><a href="reference/estimate_beta.html">estimate_beta()</a></code> to fit the logistic model by numerically optimizing the log-likelihood function.</li>
+<li>Assigns meaningful column names to the estimated coefficients.</li>
+</ul>
+</li>
+<li>
+<strong>Bootstrap Confidence Intervals:</strong>
+<ul>
+<li>Uses <code><a href="reference/bootstrap_co_int.html">bootstrap_co_int()</a></code> to draw multiple bootstrap samples, refit the model, and compute empirical confidence intervals for each coefficient.</li>
+</ul>
+</li>
+<li>
+<strong>Predictions and Probabilities:</strong>
+<ul>
+<li>Computes predicted probabilities for each observation using <code><a href="reference/predicted_prob.html">predicted_prob()</a></code>.</li>
+<li>Converts these probabilities into binary class predictions (0/1) based on the fixed cutoff (0.5).</li>
+</ul>
+</li>
+<li>
+<strong>Model Performance Evaluation:</strong>
+<ul>
+<li>Calls <code><a href="reference/confusion_matrix_metrics.html">confusion_matrix_metrics()</a></code> to produce a confusion matrix and performance metrics (accuracy, sensitivity, specificity, etc.).</li>
+<li>Prints key results (coefficients, confidence intervals, predictions, metrics) to the console for immediate inspection.</li>
+</ul>
+</li>
+<li>
+<strong>Return Value:</strong>
+<ul>
+<li>Returns a list containing:
+<ul>
+<li>Estimated coefficients</li>
+<li>Bootstrap confidence intervals</li>
+<li>Predicted probabilities</li>
+<li>Predicted classes</li>
+<li>Confusion matrix metrics</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>In Summary:</strong> The function takes care of all the heavy lifting: from cleaning data and transforming inputs into a suitable design matrix, to fitting the model, quantifying uncertainty with bootstrapping, predicting outcomes, and finally assessing how well the model performed.</p>
+<div class="section level3">
+<h3 id="example-workflow">
+<strong>Example Workflow</strong><a class="anchor" aria-label="anchor" href="#example-workflow"></a>
+</h3>
+<p>We will demonstrate the functionality of the package with an example workflow using the Bank dataset provided.</p>
+<div class="section level4">
+<h4 id="information-about-dataset">Information about dataset<a class="anchor" aria-label="anchor" href="#information-about-dataset"></a>
+</h4>
+<p>The data is related with direct marketing campaigns of a Portuguese banking institution. The marketing campaigns were based on phone calls. Often, more than one contact to the same client was required, in order to access if the product (bank term deposit) would be (‘yes’) or not (‘no’) subscribed. The classification goal is to predict if the client will subscribe a term deposit (variable y).</p>
+<p>You can access the data from the <a href="https://archive.ics.uci.edu/dataset/222/bank+marketing" class="external-link">UC Irvine Machine Learning Repository</a></p>
+<p><strong>Load the dataset, you can change the path to where you have the data</strong></p>
+<pre><code><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"~/Downloads/bank.csv"</span>, sep <span class="op">=</span> <span class="st">";"</span><span class="op">)</span></span></code></pre>
+<p>Select the desired columns/predictors you wish to use and create <code>x_vars</code> and <code>y_var</code></p>
+<ul>
+<li>
+<strong><em>age</em></strong>: clients age</li>
+<li>
+<strong><em>marital</em></strong>: marital status</li>
+<li>
+<strong><em>education</em></strong>: education Level</li>
+<li>
+<strong><em>default</em></strong>: has credit in default?</li>
+<li>
+<strong><em>balance</em></strong>: average yearly balance</li>
+<li>
+<strong><em>duration</em></strong>: last contact duration, in seconds (numeric).</li>
+<li>
+<strong><em>previous</em></strong>: number of contacts performed before this campaign and for this client</li>
+</ul>
+<pre><code><span><span class="va">x_vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>,  <span class="st">"marital"</span>, <span class="st">"education"</span>, <span class="st">"default"</span>, <span class="st">"balance"</span>,<span class="st">"duration"</span>, <span class="st">"previous"</span><span class="op">)</span>  <span class="co"># Example predictors</span></span>
+<span><span class="va">y_var</span> <span class="op">&lt;-</span> <span class="st">"y"</span>  <span class="co"># Response variable</span></span></code></pre>
+<p>Call the <code>logistic_regression_analysis</code> function, setting the arguments <code>x_vars</code>, <code>y_var</code> and <code>no_of_bootstraps</code>.</p>
+<ul>
+<li>data: A data frame containing the predictors and the response variable.</li>
+<li>x_vars: A character vector specifying the names of the predictor variables in data.These can be both numeric and categorical variables. Categorical variables will be internally converted into dummy variables.</li>
+<li>y_var: A character scalar indicating the name of the binary response variable in data.The response should be coded as 0/1 or as a factor with two levels.</li>
+<li>no_of_bootstraps: An integer specifying the number of bootstrap samples to use for estimating the confidence intervals of the coefficients.</li>
+</ul>
+<pre><code><span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/logistic_regression_analysis.html">logistic_regression_analysis</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>  x_vars <span class="op">=</span> <span class="va">x_vars</span>,</span>
+<span>  y_var <span class="op">=</span> <span class="va">y_var</span>,</span>
+<span>  no_of_bootstraps <span class="op">=</span> <span class="fl">20</span></span>
+<span><span class="op">)</span></span></code></pre>
+<p>We got the output below</p>
+<pre><code>Estimated Coefficients:
+                            [,1]
+(Intercept)        -3.9861824509
+age                 0.0231161059
+maritalmarried     -0.6953138026
+maritalsingle      -0.3026683861
+educationsecondary  0.5488431414
+educationtertiary   1.1881491302
+educationunknown    1.1227889068
+defaultyes         -1.4411324852
+balance            -0.0004205648
+duration            0.0037823035
+previous            0.1566433251
+attr(,"names")
+ [1] "(Intercept)"        "age"                "maritalmarried"     "maritalsingle"      "educationsecondary"
+ [6] "educationtertiary"  "educationunknown"   "defaultyes"         "balance"            "duration"
+[11] "previous"
+
+Bootstrap Confidence Intervals:
+$lower
+ [1] -7.5744829420  0.0159053832 -0.8884010069 -0.6229484469 -0.2025349751  0.4097801020 -0.7458008780 -2.6589661629
+ [9] -0.0005747595  0.0035375024  0.1131326647
+
+$upper
+ [1] -3.5861304447  0.0661107185  0.1768237163  1.2436650904  0.9692055472  1.6645150323  1.3628661729  0.4583972579
+ [9] -0.0001234456  0.0046602936  0.2327465873
+
+
+Predicted Probabilities (first 6):
+        [,1]
+1 0.01164966
+2 0.01935563
+3 0.11888505
+4 0.06489191
+5 0.12853189
+6 0.16762340
+
+Predictions (first 6):
+  [,1]
+1    0
+2    0
+3    0
+4    0
+5    0
+6    0
+
+Confusion Matrix Metrics:
+$Prevalence
+[1] 0.11524
+
+$Accuracy
+[1] 0.8863083
+
+$Sensitivity
+[1] 0.2341651
+
+$Specificity
+[1] 0.97125
+
+$False_Discovery_Rate
+[1] 0.4852321
+
+$Diagnostic_Odds_Ratio
+[1] 10.32952
+</code></pre>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="interpretation-of-results">Interpretation of Results<a class="anchor" aria-label="anchor" href="#interpretation-of-results"></a>
+</h2>
+<p><strong>Model Coefficients:</strong> - The intercept is negative and large in magnitude, indicating a low baseline probability of a positive outcome when all predictors are at their reference levels. - Positive coefficients (e.g., for <code>educationtertiary</code>) suggest that having that characteristic increases the likelihood of a positive outcome. - Negative coefficients (e.g., for <code>defaultyes</code>) indicate that having that trait decreases the likelihood of a positive outcome.</p>
+<p><strong>Bootstrap Confidence Intervals:</strong> - The provided intervals show the range of plausible values for each coefficient. - Many intervals do not include zero, suggesting that those predictors have a meaningful association with the outcome.</p>
+<p><strong>Predicted Probabilities and Predictions:</strong> - The first six predicted probabilities are all relatively low (&lt;0.17), leading to predicted class 0 for these observations. - This suggests the model is conservative about predicting positive outcomes.</p>
+<p><strong>Performance Metrics:</strong></p>
+<ul>
+<li>
+<strong>Prevalence (~0.115):</strong> About 11.5% of observations are positive in the dataset.</li>
+<li>
+<strong>Accuracy (~0.886):</strong> The model correctly classifies nearly 89% of observations overall.</li>
+<li>
+<strong>Sensitivity (~0.234):</strong> It correctly identifies about 23% of actual positives, indicating it often misses positives.</li>
+<li>
+<strong>Specificity (~0.971):</strong> It correctly identifies about 97% of actual negatives, showing strong performance in ruling out negatives.</li>
+<li>
+<strong>False Discovery Rate (~0.485):</strong> Almost half of the predicted positives are actually false positives.</li>
+<li>
+<strong>Diagnostic Odds Ratio (10.33):</strong> The model has moderate ability to distinguish between positive and negative cases.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="documentation-of-helper-functions">Documentation of Helper Functions<a class="anchor" aria-label="anchor" href="#documentation-of-helper-functions"></a>
+</h2>
+<p>Below is a description of the main helper functions included in the package. These functions work together to perform logistic regression estimation using numerical optimization, bootstrap confidence intervals, and model performance evaluation.</p>
+<div class="section level3">
+<h3 id="id_1-log_likelihoodbeta-x-y">1. <code>log_likelihood(beta, X, y)</code>
+<a class="anchor" aria-label="anchor" href="#id_1-log_likelihoodbeta-x-y"></a>
+</h3>
+<p><strong>Description:</strong><br>
+Calculates the negative log-likelihood for a given set of parameters (<code>beta</code>), predictors (<code>X</code>), and binary response (<code>y</code>). This function is internally used by the optimization routine to find the parameter values that minimize the negative log-likelihood.</p>
+<p><strong>Key Details:</strong><br>
+- <code>beta</code>: Coefficient vector for the logistic regression model.<br>
+- <code>X</code>: Design matrix of predictors (including intercept if applicable).<br>
+- <code>y</code>: Binary response variable (0/1).<br>
+- Ensures numerical stability by clipping probabilities away from 0 and 1 with a small <code>epsilon</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="id_2-estimate_betax-y">2. <code>estimate_beta(X, y)</code>
+<a class="anchor" aria-label="anchor" href="#id_2-estimate_betax-y"></a>
+</h3>
+<p><strong>Description:</strong><br>
+Estimates the logistic regression coefficients by minimizing the negative log-likelihood using the <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim()</a></code> function. It starts from an initial guess derived from a least-squares approximation and iteratively updates the parameters.</p>
+<p><strong>Key Details:</strong><br>
+- <code>X</code>: Design matrix of predictors.<br>
+- <code>y</code>: Binary response variable.<br>
+- Returns a vector of estimated coefficients that best fit the data under a logistic model.</p>
+</div>
+<div class="section level3">
+<h3 id="id_3-bootstrap_co_intx-y-alpha--005-no_of_bootstraps--20">3. <code>bootstrap_co_int(X, y, alpha = 0.05, no_of_bootstraps = 20)</code>
+<a class="anchor" aria-label="anchor" href="#id_3-bootstrap_co_intx-y-alpha--005-no_of_bootstraps--20"></a>
+</h3>
+<p><strong>Description:</strong><br>
+Computes bootstrap confidence intervals for the estimated coefficients. It repeatedly samples the data with replacement, re-estimates the coefficients, and then derives empirical percentile-based confidence intervals.</p>
+<p><strong>Key Details:</strong><br>
+- <code>X</code>: Design matrix of predictors.<br>
+- <code>y</code>: Binary response variable.<br>
+- <code>alpha</code>: Significance level (default 0.05).<br>
+- <code>no_of_bootstraps</code>: Number of bootstrap samples (default 20).<br>
+- Returns a list with <code>lower</code> and <code>upper</code> confidence limits for each coefficient.</p>
+</div>
+<div class="section level3">
+<h3 id="id_4-predicted_probbeta-x">4. <code>predicted_prob(beta, X)</code>
+<a class="anchor" aria-label="anchor" href="#id_4-predicted_probbeta-x"></a>
+</h3>
+<p><strong>Description:</strong><br>
+Generates the predicted probabilities of the positive class (1) for each observation given the current coefficient estimates.</p>
+<p><strong>Key Details:</strong><br>
+- <code>beta</code>: Coefficient vector.<br>
+- <code>X</code>: Design matrix.<br>
+- Returns a vector of probabilities (values between 0 and 1).</p>
+</div>
+<div class="section level3">
+<h3 id="id_5-predictlabelsbeta-x-cutoff--05">5. <code>predictlabels(beta, X, cutoff = 0.5)</code>
+<a class="anchor" aria-label="anchor" href="#id_5-predictlabelsbeta-x-cutoff--05"></a>
+</h3>
+<p><strong>Description:</strong><br>
+Converts predicted probabilities into class predictions (0 or 1) based on a specified cutoff. Observations with predicted probabilities above the cutoff are classified as 1; otherwise, 0.</p>
+<p><strong>Key Details:</strong><br>
+- <code>beta</code>: Coefficient vector.<br>
+- <code>X</code>: Design matrix.<br>
+- <code>cutoff</code>: Classification threshold (default 0.5).<br>
+- Returns a vector of predicted classes (0/1).</p>
+</div>
+<div class="section level3">
+<h3 id="id_6-confusion_matrix_metricsy_true-y_pred">6. <code>confusion_matrix_metrics(y_true, y_pred)</code>
+<a class="anchor" aria-label="anchor" href="#id_6-confusion_matrix_metricsy_true-y_pred"></a>
+</h3>
+<p><strong>Description:</strong><br>
+Calculates various performance metrics derived from the confusion matrix. This includes accuracy, sensitivity, specificity, false discovery rate, and diagnostic odds ratio, among others.</p>
+<p><strong>Key Details:</strong><br>
+- <code>y_true</code>: True binary labels.<br>
+- <code>y_pred</code>: Predicted binary labels.<br>
+- Returns a list of performance metrics and summary statistics.</p>
+<hr>
+<p><strong>How These Functions Work Together:</strong> - <code><a href="reference/log_likelihood.html">log_likelihood()</a></code> and <code><a href="reference/estimate_beta.html">estimate_beta()</a></code> handle the core parameter estimation for logistic regression. - <code><a href="reference/bootstrap_co_int.html">bootstrap_co_int()</a></code> refines the understanding of parameter uncertainty through resampling. - <code><a href="reference/predicted_prob.html">predicted_prob()</a></code> and <code><a href="reference/predictlabels.html">predictlabels()</a></code> translate model parameters into interpretable predictions. - <code><a href="reference/confusion_matrix_metrics.html">confusion_matrix_metrics()</a></code> provides a snapshot of how well the model’s predictions align with the actual outcomes, guiding model evaluation and comparison.</p>
+<p>You will not need to call these helper functions directly if you use the main wrapper function (ie, <code><a href="reference/logistic_regression_analysis.html">logistic_regression_analysis()</a></code>). However, understanding these components can help you diagnose issues, customize analyses, or extend the functionality.</p>
+<p><strong>The <code>logisticreg</code> package simplifies the process of logistic regression modeling and evaluation.</strong></p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="logistic-regression-shiny-app">Logistic Regression Shiny App<a class="anchor" aria-label="anchor" href="#logistic-regression-shiny-app"></a>
+</h2>
+<p>This Shiny app provides an interactive interface for performing logistic regression analysis. Upload your dataset, select the response and predictor variables, and view the results instantly.</p>
+<p>To launch the app, simply run the following command in your R console:</p>
+<pre><code><span><span class="fu"><a href="reference/run_logisticreg_app.html">run_logisticreg_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="section level2">
+<h2 id="github-repository">Github Repository<a class="anchor" aria-label="anchor" href="#github-repository"></a>
+</h2>
+<p>Thank you for exploring the logisticreg package! This package aims to simplify logistic regression modeling and provide robust tools for data analysis. For detailed documentation, examples, and the source code, please visit the <a href="https://github.com/AU-R-Programming/Final-project_5" class="external-link">GitHub repository</a> Your feedback and contributions are always welcome!</p>
+<div class="section level3">
+<h3 id="dedicated-website">Dedicated Website<a class="anchor" aria-label="anchor" href="#dedicated-website"></a>
+</h3>
+<p>You can also find everything in this document on our dedicated website, where it’s conveniently organized and easy to navigate. <a href="https://au-r-programming.github.io/Final-project_5/" class="external-link">Visit our website for a seamless experience and additional resources!</a></p>
+</div>
+<div class="section level3">
+<h3 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h3>
+<p>We would like to acknowledge the contributions of generative language models, which played a role in enhancing the clarity and quality of this project and documentation. These tools helped in refining our explanations and improving the overall presentation of the package’s features. You can find our conversations <a href="https://chatgpt.com/share/6753730b-3d58-8005-9a30-ac98f3060ce2" class="external-link">here</a> and <a href="https://chatgpt.com/share/6753674f-aa38-800a-b218-c6ebf5d03349" class="external-link">here</a>.</p>
+</div>
+</div>
 </div>
   </div>
 

@@ -1,4 +1,4 @@
-#(1) Testing the functions on a dataset provided on canvas
+#Testing the functions on a dataset provided on canvas
 # Load the dataset - We used the Bank Marketing data set provided
 data <- read.csv("~/Downloads/bank.csv", sep = ";")
 
@@ -11,4 +11,3 @@ results <- logistic_regression_analysis(
   y_var = y_var,
   no_of_bootstraps = 20  
 )
-

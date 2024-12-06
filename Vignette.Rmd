@@ -63,24 +63,33 @@ By the end of this vignette, you’ll have a comprehensive understanding of how 
 
 ## Installation
 
-To install the `logisticreg` package, use the following command:
+To get started with the `logisticreg` package, you first need to install it from its GitHub repository. The installation process requires the `devtools` package, which allows you to install packages directly from GitHub. If you do not already have `devtools` installed, you can install it easily using the following command:
+
+```{r, eval=FALSE}
+install.packages("devtools")
+```
+
+
+Once `devtools` is installed, you can proceed to install the `logisticreg` package. Simply run the following command in your R console:
 
 ```{r eval=FALSE}
-devtools::install_github("AU-R-Programming/Final-project_5/logisticreg")
-
+devtools::install_github("AU-R-Programming/Final-project_5")
 ```
 
 
-Load the package after installation:
+After successfully installing the `logisticreg` package, the next step is to load it into your R environment. Loading the package ensures that all its functions and features are available for use in your session. To do this, use the `library()` function as shown below:
+
 ```{r, eval=FALSE}
 library(logisticreg)
-
 ```
+
+This command activates the package, making its functions accessible so you can begin your analysis. Once the package is loaded, you can start exploring its capabilities, such as fitting logistic regression models, generating predictions, evaluating performance metrics, and more. Loading the package is a crucial step before running any of its functionalities.
+
 
 ## Internal Workings of `logistic_regression_analysis()` Which is the Main Wrapper Function
 
 **Description:**
-\`logistic_regression_analysis()\` orchestrates the entire logistic regression process:
+`logistic_regression_analysis()` orchestrates the entire logistic regression process:
 data cleaning, model fitting, bootstrap-based inference, prediction, and performance evaluation. The user only needs to provide the data, the predictor names, the response variable name, and the number of bootstrap samples.
 
 **Step-by-Step Process:**
@@ -287,8 +296,17 @@ run_logisticreg_app()
 ```
 
 
+## Github Repository
+Thank you for exploring the logisticreg package! This package aims to simplify logistic regression modeling and provide robust tools for data analysis. For detailed documentation, examples, and the source code, please visit the [GitHub repository](https://github.com/AU-R-Programming/Final-project_5) Your feedback and contributions are always welcome!
 
 
+
+### Dedicated Website 
+You can also find everything in this document on our dedicated website, where it’s conveniently organized and easy to navigate. [Visit our website for a seamless experience and additional resources!](https://au-r-programming.github.io/Final-project_5/)
+
+
+### References
+We would like to acknowledge the contributions of generative language models, which played a role in enhancing the clarity and quality of this project and documentation. These tools helped in refining our explanations and improving the overall presentation of the package's features. You can find our conversations [here](https://chatgpt.com/share/6753730b-3d58-8005-9a30-ac98f3060ce2) and [here](https://chatgpt.com/share/6753674f-aa38-800a-b218-c6ebf5d03349).
 
 
 

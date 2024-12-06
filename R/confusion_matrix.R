@@ -11,7 +11,7 @@
 #' X <- cbind(1, matrix(rnorm(n * 2), ncol = 2))
 #' y <- rbinom(n, 1, prob = 0.5)
 #' beta_est <- estimate_beta(X, y)
-#' y_pred <- predict(beta_est, X)
+#' y_pred <- predictlabels(beta_est, X)
 #' metrics <- confusion_matrix_metrics(y, y_pred)
 #' print(metrics)
 confusion_matrix_metrics <- function(y_true, y_pred) {

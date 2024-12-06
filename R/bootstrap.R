@@ -7,7 +7,6 @@
 #' @param y Numeric vector of binary response values (0 or 1).
 #' @param alpha Significance level for confidence intervals (default is 0.05).
 #' @param no_of_bootstraps Number of bootstrap iterations (default is 20).
-
 #' @return A list containing the lower and upper confidence intervals for each coefficient.
 #' @importFrom stats quantile
 #' @export

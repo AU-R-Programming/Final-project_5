@@ -1,14 +1,5 @@
 library(shiny)
 
-# Source your functions here.
-# source("log_likelihood.R")
-# source("estimate_beta.R")
-# source("bootstrap_co_int.R")
-# source("predicted_prob.R")
-# source("predictlabels.R")
-# source("confusion_matrix_metrics.R")
-# source("logistic_regression_analysis.R")
-
 ui <- fluidPage(
   titlePanel("Logistic Regression Analysis (Numerical Optimization)"),
   sidebarLayout(
